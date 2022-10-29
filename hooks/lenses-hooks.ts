@@ -145,11 +145,13 @@ export function useLensUpdater<T, S extends LensInput[]>(
   const lenses = useMemo(() => lens(...selectors), [selectors]);
   return useCallback(
     (value: SetStateAction<LensType<T, S>>) => {
-      ctx[VALUE] =
-        typeof value === "function"
-          ? lenses.over(ctx[VALUE], value as any)
-          : lenses.set(ctx[VALUE], value);
-      ctx[SUBSCRIBER].forEach((f) => f());
+      try {
+        ctx[VALUE] =
+          typeof value === "function"
+            ? lenses.over(ctx[VALUE], value as any)
+            : lenses.set(ctx[VALUE], value);
+        ctx[SUBSCRIBER].forEach((f) => f());
+      } catch {}
     },
     [ctx, lenses]
   );
