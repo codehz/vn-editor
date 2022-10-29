@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "vn-editor",
+    "owner": "codehz",
     "slug": "vn-editor",
     "version": "1.0.0",
     "orientation": "portrait",
