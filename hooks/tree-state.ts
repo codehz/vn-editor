@@ -78,6 +78,7 @@ export class TreeRoot<T> implements Tree<T> {
     if (keys.length === 0) {
       // @ts-ignore: optimize
       this.value = value instanceof Function ? value(this.value) : value;
+      this.update([]);
     } else {
       let tmp: any = this.value;
       for (const key of keys.slice(0, -1)) {
@@ -203,12 +204,15 @@ export function useTreeArrayKeys<T, S extends string[]>(
   root: Tree<T>,
   ...path: S
 ): string[] {
-  const [keys, setKeys] = useState(() =>
-    (root.getByPath(path) as any).map((x: { key: string }) => x.key)
+  const [keys, setKeys] = useState(
+    () =>
+      (root.getByPath(path) as any)?.map((x: { key: string }) => x.key) ?? []
   );
   useEffect(() => {
     const token = root.on(path, () =>
-      setKeys((root.getByPath(path) as any).map((x: { key: string }) => x.key))
+      setKeys(
+        (root.getByPath(path) as any)?.map((x: { key: string }) => x.key) ?? []
+      )
     );
     return () => root.off(token);
   }, [root, path]);
