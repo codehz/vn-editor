@@ -8,7 +8,8 @@ import {
   IconButton,
   Icon,
 } from "native-base";
-import React, { FC } from "react";
+import React, { FC, useCallback } from "react";
+import { useActionSheet } from "@expo/react-native-action-sheet";
 import { View } from "react-native";
 import {
   Tree,
@@ -89,11 +90,49 @@ const PlainTextEditor: FC<{ tree: Tree<string>; label: string }> = ({
   );
 };
 
+const VariableSelector: FC<{ tree: Tree<string> }> = ({ tree }) => {
+  const value = useTreeValue(tree);
+  const setValue = useTreeUpdater(tree);
+  return (
+    <Input
+      flex={1}
+      placeholder={"choose a variable"}
+      padding={1}
+      value={value}
+      onChangeText={setValue}
+    />
+  );
+};
+
 const EditorCore: FC<{ tree: Tree<Expression>; prefix?: string }> = ({
   tree,
   prefix,
 }) => {
   const type = useTreeValue(tree, "type");
+  const update = useTreeUpdater(tree);
+  const actionSheet = useActionSheet();
+  const changeType = useCallback(() => {
+    actionSheet.showActionSheetWithOptions(
+      {
+        title: "Choose a type",
+        options: ["Cancel", "Literal", "Variable"],
+        disabledButtonIndices: [
+          ["", "literal", "variable"].findIndex((x) => x === tree.value.type),
+        ],
+        cancelButtonIndex: 0,
+      },
+      (i) => {
+        switch (i) {
+          case 1:
+            update(({ key }) => ({ key, type: "literal", value: "" }));
+            break;
+          case 2:
+            update(({ key }) => ({ key, type: "variable", name: "" }));
+            break;
+        }
+      }
+    );
+  }, [actionSheet]);
   return (
     <VStack space={1}>
       <HStack alignItems="center" space={1}>
@@ -105,6 +144,7 @@ const EditorCore: FC<{ tree: Tree<Expression>; prefix?: string }> = ({
           icon={<Icon as={MaterialCommunityIcons} name="swap-horizontal" />}
           size={5}
           padding={1}
+          onPress={changeType}
         />
       </HStack>
       {type === "literal" ? (
@@ -115,7 +155,12 @@ const EditorCore: FC<{ tree: Tree<Expression>; prefix?: string }> = ({
           {(tree) => <PlainTextEditor tree={tree} label="literal" />}
         </TreeProxy>
       ) : (
-        <></>
+        <TreeProxy
+          tree={tree as Tree<Expression & { type: "variable" }>}
+          prop="name"
+        >
+          {(tree) => <VariableSelector tree={tree} />}
+        </TreeProxy>
       )}
     </VStack>
   );
