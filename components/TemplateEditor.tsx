@@ -42,8 +42,8 @@ const VariableRendererInner: FC<{ name: string; tree: Tree<Expression[]> }> = ({
   tree,
   name,
 }) => {
-  const value = useTreeValue(tree, name);
-  return <ExpressionEditor.Renderer value={value} />;
+  const value = useSubTree(tree, name);
+  return <ExpressionEditor.Renderer expr={value} />;
 };
 
 const VariableRenderer: FC<{ name: string; tree: Tree<Expression[]> }> = ({

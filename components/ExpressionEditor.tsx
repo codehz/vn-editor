@@ -2,13 +2,23 @@
 import { Box, HStack, Input, Select, VStack, Text } from "native-base";
 import React, { FC, useState } from "react";
 import { TouchableOpacity, View } from "react-native";
-import { Tree, useSubTree, useTreeUpdater, useTreeValue } from "../hooks/tree-state";
+import {
+  Tree,
+  useSubTree,
+  useTreeUpdater,
+  useTreeValue,
+} from "../hooks/tree-state";
 import { Expression } from "../lib/types";
 
+// const ExpressionLiteralValue: FC<{}>
+
 const ExpressionRenderer: FC<{
-  value: Expression;
+  expr: Tree<Expression>;
   prefix?: string;
-}> = ({ value, prefix }) => {
+}> = ({ expr, prefix }) => {
+  const type = useTreeValue(expr, "type");
+  const value = useTreeValue(expr, "value") as string;
+  const name = useTreeValue(expr, "name") as string;
   return (
     <View
       style={{
@@ -26,16 +36,16 @@ const ExpressionRenderer: FC<{
       >
         <Text color="white" fontSize={8}>
           {prefix}
-          {value.type}
+          {type}
         </Text>
       </Box>
       <Box paddingX={1}>
-        {value.type === "literal" ? (
-          <Text color="black">{value.value}</Text>
-        ) : value.type === "variable" ? (
-          <Text>{value.name}</Text>
-        ) : value.type === "builtin" ? (
-          <Text>{value.name}</Text>
+        {type === "literal" ? (
+          <Text color="black">{value}</Text>
+        ) : type === "variable" ? (
+          <Text>{name}</Text>
+        ) : type === "builtin" ? (
+          <Text>{name}</Text>
         ) : (
           <></>
         )}
@@ -67,7 +77,7 @@ function getType(x: Expression) {
 }
 
 const EditorCore: FC<{ tree: Tree<Expression> }> = ({ tree }) => {
-  const value = useTreeValue(tree).type;
+  const value = useTreeValue(tree, "type");
   return (
     <HStack space={1}>
       <Select selectedValue={value} minWidth={150} placeholder="choice type">
@@ -84,12 +94,11 @@ const ExpressionEditor: FC<{
   tree: Tree<Expression>;
   prefix?: string;
 }> = ({ tree, prefix }) => {
-  const value = useTreeValue(tree);
   const [editMode, setEditMode] = useState(false);
   return (
     <VStack w="100%" space={1}>
       <TouchableOpacity onPress={() => setEditMode((x) => !x)}>
-        <ExpressionRenderer value={value} prefix={prefix} />
+        <ExpressionRenderer expr={tree} prefix={prefix} />
       </TouchableOpacity>
       {editMode && <EditorCore tree={tree} />}
     </VStack>
