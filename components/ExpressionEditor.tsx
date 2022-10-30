@@ -1,6 +1,16 @@
 // import { Picker } from "@react-native-picker/picker";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Box, HStack, Input, Select, VStack, Text, Badge, IconButton, Icon } from "native-base";
+import {
+  Box,
+  HStack,
+  Input,
+  Select,
+  VStack,
+  Text,
+  Badge,
+  IconButton,
+  Icon,
+} from "native-base";
 import React, { FC, useState } from "react";
 import { TouchableOpacity, View } from "react-native";
 import {
@@ -11,10 +21,18 @@ import {
 } from "../hooks/tree-state";
 import { Expression } from "../lib/types";
 
+const typenames: Record<Expression["type"], string> = {
+  literal: "lit",
+  variable: "$",
+  builtin: "@",
+  expr: "=",
+  invoke: "f()",
+  invoke_indirect: "*f()",
+};
+
 const ExpressionRenderer: FC<{
   expr: Tree<Expression>;
-  prefix?: string;
-}> = ({ expr, prefix }) => {
+}> = ({ expr }) => {
   const type = useTreeValue(expr, "type");
   const value = useTreeValue(expr, "value") as string;
   const name = useTreeValue(expr, "name") as string;
@@ -27,20 +45,23 @@ const ExpressionRenderer: FC<{
         overflow: "hidden",
       }}
     >
-      <Box
-        bgColor="black"
-        alignSelf="flex-start"
-        padding={0.5}
-        borderBottomRightRadius={5}
-      >
-        <Text color="white" fontSize={8}>
-          {prefix}
-          {type}
-        </Text>
-      </Box>
+      {type !== "literal" && (
+        <Box
+          bgColor="black"
+          alignSelf="flex-start"
+          padding={0.5}
+          borderBottomRightRadius={5}
+        >
+          <Text color="white" fontSize={8}>
+            {typenames[type]}
+          </Text>
+        </Box>
+      )}
       <Box paddingX={1}>
         {type === "literal" ? (
-          <Text color="black">{value}</Text>
+          <Text color="black" fontSize={12}>
+            {value}
+          </Text>
         ) : type === "variable" ? (
           <Text>{name}</Text>
         ) : type === "builtin" ? (
@@ -88,7 +109,11 @@ const EditorCore: FC<{ tree: Tree<Expression>; prefix?: string }> = ({
           {prefix}
           {type}
         </Text>
-        <IconButton icon={<Icon as={MaterialCommunityIcons} name="swap-horizontal" />} size={5} padding={1}  />
+        <IconButton
+          icon={<Icon as={MaterialCommunityIcons} name="swap-horizontal" />}
+          size={5}
+          padding={1}
+        />
       </HStack>
       {type === "literal" ? <LiteralEditor tree={tree as any} /> : <></>}
     </VStack>
