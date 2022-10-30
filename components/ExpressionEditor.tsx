@@ -10,8 +10,6 @@ import {
 } from "../hooks/tree-state";
 import { Expression } from "../lib/types";
 
-// const ExpressionLiteralValue: FC<{}>
-
 const ExpressionRenderer: FC<{
   expr: Tree<Expression>;
   prefix?: string;
