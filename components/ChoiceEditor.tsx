@@ -66,7 +66,6 @@ const ChoiceEditorList: FC<{ tree: Tree<Choice[]> }> = ({ tree }) => {
           onPress={removeChoiceStatement}
         />
       </HStack>
-      {/* <Badge>Choice</Badge> */}
       {keys.map((key) => (
         <ArrayRemoveHandler key={key} tree={tree} id={key}>
           <TreeProxy tree={tree} prop={key}>

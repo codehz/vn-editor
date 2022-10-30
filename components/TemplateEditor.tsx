@@ -87,7 +87,7 @@ const Renderer: FC<{ tree: Tree<TemplatedText>; embed: boolean }> = ({
       </Box>
     );
   const content = (
-    <Text>
+    <Text lineHeight="auto">
       {tokens!.map((token, i) =>
         token.type === "literal" ? (
           <Text fontSize={12} key={i}>
@@ -102,13 +102,7 @@ const Renderer: FC<{ tree: Tree<TemplatedText>; embed: boolean }> = ({
   return embed ? (
     <Box padding={1}>{content}</Box>
   ) : (
-    <Box
-      borderRadius={5}
-      paddingX={1}
-      paddingTop={1}
-      borderWidth={1}
-      borderColor="gray.400"
-    >
+    <Box borderRadius={5} padding={1} borderWidth={1} borderColor="gray.400">
       {content}
     </Box>
   );
@@ -127,6 +121,7 @@ const EditTemplate: FC<{
       autoFocus
       padding={1}
       multiline
+      scrollEnabled={false}
       inputAccessoryViewID={inputAccessoryViewID}
     />
   );
@@ -189,7 +184,7 @@ const EditorCore: FC<{
   const remove = useRemoveHandler();
   const [id] = useState(() => randomid());
   return (
-    <VStack w="100%" space={1} padding={embed ? 1 : 0}>
+    <>
       <InputAccessoryView nativeID={id} backgroundColor="white">
         <Button.Group isAttached bgColor="white" justifyContent="flex-end">
           <Button
@@ -205,11 +200,13 @@ const EditorCore: FC<{
           </Button>
         </Button.Group>
       </InputAccessoryView>
-      <EditTemplate tree={template} inputAccessoryViewID={id} />
-      {variables.map((x) => (
-        <EditParameterWrapper key={x} tree={params} name={x} />
-      ))}
-    </VStack>
+      <VStack w="100%" space={1} padding={embed ? 1 : 0}>
+        <EditTemplate tree={template} inputAccessoryViewID={id} />
+        {variables.map((x) => (
+          <EditParameterWrapper key={x} tree={params} name={x} />
+        ))}
+      </VStack>
+    </>
   );
 };
 
