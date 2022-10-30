@@ -7,18 +7,33 @@ import {
   Text,
   IconButton,
   Icon,
+  SectionList,
+  Button,
+  Actionsheet,
+  useKeyboardBottomInset,
+  Heading,
+  Badge,
+  ScrollView,
+  Flex,
+  Pressable,
 } from "native-base";
-import React, { FC, useCallback } from "react";
+import React, { FC, ReactNode, useCallback, useMemo, useState } from "react";
 import { useActionSheet } from "@expo/react-native-action-sheet";
-import { View } from "react-native";
+import { Keyboard, View } from "react-native";
 import {
   Tree,
   useSubTree,
   useTreeUpdater,
   useTreeValue,
 } from "../hooks/tree-state";
-import { Expression } from "../lib/types";
+import { Expression, Variable } from "../lib/types";
 import { TreeProxy } from "./TreeProxy";
+import {
+  useVariableContext,
+  VariableDescriptor,
+  VariableSection,
+} from "./VariableContext";
+import { useEditMode } from "./EditMode";
 
 const typenames: Record<Expression["type"], string> = {
   literal: "lit",
@@ -27,6 +42,33 @@ const typenames: Record<Expression["type"], string> = {
   expr: "=",
   invoke: "f()",
   invoke_indirect: "*f()",
+};
+
+const FoundedVariable: FC<{
+  tree: Tree<Variable>;
+  scope: string;
+  prefix?: string;
+}> = ({ tree, scope, prefix }) => {
+  const value = useTreeValue(tree, "name");
+  return (
+    <>
+      {prefix}
+      {scope}::{value}
+    </>
+  );
+};
+
+const VariableNameResolver: FC<{
+  id: string;
+  prefix?: string;
+  fallback?: ReactNode;
+}> = ({ id, prefix, fallback = <Text color="error.400">not found</Text> }) => {
+  const { find } = useVariableContext();
+  const found = useMemo(() => (id ? find(id) : undefined), [id]);
+  if (found) {
+    return <FoundedVariable tree={found[1]} scope={found[0]} prefix={prefix} />;
+  }
+  return <>{fallback}</>;
 };
 
 const ExpressionRenderer: FC<{
@@ -62,7 +104,9 @@ const ExpressionRenderer: FC<{
             {value}
           </Text>
         ) : type === "variable" ? (
-          <Text>{name}</Text>
+          <Text fontSize={12}>
+            <VariableNameResolver id={name} />
+          </Text>
         ) : type === "builtin" ? (
           <Text>{name}</Text>
         ) : (
@@ -90,17 +134,75 @@ const PlainTextEditor: FC<{ tree: Tree<string>; label: string }> = ({
   );
 };
 
+const VariableList: FC<{
+  list: VariableSection[];
+  onSelect(key: string): void;
+}> = ({ list, onSelect }) => {
+  return (
+    <VStack space={1}>
+      {list.map(({ title, data }) => (
+        <>
+          <Text fontSize={20}>{title}</Text>
+          <Flex flexWrap="wrap" direction="row">
+            {data.map(({ key, name }) => (
+              <Pressable
+                _pressed={{ bgColor: "primary.400" }}
+                paddingX={0.5}
+                margin={0.5}
+                bgColor="primary.200"
+                borderRadius={5}
+                onPress={() => onSelect(key)}
+              >
+                <Text>{name}</Text>
+              </Pressable>
+            ))}
+          </Flex>
+        </>
+      ))}
+    </VStack>
+  );
+};
+
 const VariableSelector: FC<{ tree: Tree<string> }> = ({ tree }) => {
   const value = useTreeValue(tree);
   const setValue = useTreeUpdater(tree);
+  const [state, setState] = useState<VariableSection[] | undefined>();
+  const [open, setOpen] = useState(false);
+  const { list } = useVariableContext();
   return (
-    <Input
-      flex={1}
-      placeholder={"choose a variable"}
-      padding={1}
-      value={value}
-      onChangeText={setValue}
-    />
+    <>
+      <Button
+        focusable
+        padding={1}
+        variant="subtle"
+        onPress={() => {
+          Keyboard.dismiss();
+          setState(list());
+          setOpen(true);
+        }}
+      >
+        <Text>
+          {<VariableNameResolver id={value} fallback={<>select</>} />}
+        </Text>
+      </Button>
+      <Actionsheet
+        size="full"
+        isOpen={state && open}
+        onClose={() => setOpen(false)}
+      >
+        <Actionsheet.Content>
+          <ScrollView w="100%" overScrollMode="never" bounces={false}>
+            <VariableList
+              list={state ?? []}
+              onSelect={(value: string) => {
+                setValue(value);
+                setOpen(false);
+              }}
+            />
+          </ScrollView>
+        </Actionsheet.Content>
+      </Actionsheet>
+    </>
   );
 };
 

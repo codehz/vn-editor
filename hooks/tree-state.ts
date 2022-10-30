@@ -116,7 +116,7 @@ export class TreeRoot<T> implements Tree<T> {
   }
 }
 
-class SubTree<T> implements Tree<T> {
+export class SubTree<T> implements Tree<T> {
   parent: Tree<any>;
   path: string[];
   constructor(parent: Tree<any>, path: string[]) {

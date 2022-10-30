@@ -1,14 +1,15 @@
-import {
-  VStack,
-  Button,
-  ScrollView,
-  Box,
-} from "native-base";
-import React, { FC, useState } from "react";
-import { Document } from "../lib/types";
+import { VStack, Button, ScrollView, Box } from "native-base";
+import React, { FC, useCallback, useState } from "react";
+import { Document, Variable } from "../lib/types";
 import StatementEditor from "./StatementEditor";
 import VariableEditor from "./VariableEditor";
-import { TreeRoot, useSubTree, useTreeUpdater } from "../hooks/tree-state";
+import {
+  SubTree,
+  TreeRoot,
+  useSubTree,
+  useTreeUpdater,
+} from "../hooks/tree-state";
+import { WithVariableContext } from "./VariableContext";
 
 export const Editor: FC = () => {
   const [root] = useState(
@@ -22,6 +23,17 @@ export const Editor: FC = () => {
   const update = useTreeUpdater(root);
   const variables = useSubTree(root, "variables");
   const entrypoint = useSubTree(root, "entrypoint");
+  const listVariables = useCallback(
+    () =>
+      root.value.variables.map((x) => ({
+        key: x.key,
+        name: x.name,
+        get() {
+          return new SubTree<Variable>(variables, [x.key]);
+        },
+      })),
+    []
+  );
   return (
     <Box safeArea>
       <ScrollView
@@ -42,8 +54,10 @@ export const Editor: FC = () => {
           >
             reset
           </Button>
-          <VariableEditor.List tree={variables} />
-          <StatementEditor.List tree={entrypoint} />
+          <WithVariableContext name="Global" list={listVariables}>
+            <VariableEditor.List tree={variables} />
+            <StatementEditor.List tree={entrypoint} />
+          </WithVariableContext>
         </VStack>
       </ScrollView>
     </Box>
