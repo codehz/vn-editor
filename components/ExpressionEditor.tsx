@@ -1,18 +1,15 @@
-// import { Picker } from "@react-native-picker/picker";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import {
   Box,
   HStack,
   Input,
-  Select,
   VStack,
   Text,
-  Badge,
   IconButton,
   Icon,
 } from "native-base";
-import React, { FC, useState } from "react";
-import { TouchableOpacity, View } from "react-native";
+import React, { FC } from "react";
+import { View } from "react-native";
 import {
   Tree,
   useSubTree,
@@ -20,6 +17,7 @@ import {
   useTreeValue,
 } from "../hooks/tree-state";
 import { Expression } from "../lib/types";
+import { TreeProxy } from "./TreeProxy";
 
 const typenames: Record<Expression["type"], string> = {
   literal: "lit",
@@ -91,12 +89,6 @@ const PlainTextEditor: FC<{ tree: Tree<string>; label: string }> = ({
   );
 };
 
-const LiteralEditor: FC<{
-  tree: Tree<Expression & { type: "literal" }>;
-}> = ({ tree }) => (
-  <PlainTextEditor tree={useSubTree(tree, "value")} label="literal" />
-);
-
 const EditorCore: FC<{ tree: Tree<Expression>; prefix?: string }> = ({
   tree,
   prefix,
@@ -115,7 +107,16 @@ const EditorCore: FC<{ tree: Tree<Expression>; prefix?: string }> = ({
           padding={1}
         />
       </HStack>
-      {type === "literal" ? <LiteralEditor tree={tree as any} /> : <></>}
+      {type === "literal" ? (
+        <TreeProxy
+          tree={tree as Tree<Expression & { type: "literal" }>}
+          prop="value"
+        >
+          {(tree) => <PlainTextEditor tree={tree} label="literal" />}
+        </TreeProxy>
+      ) : (
+        <></>
+      )}
     </VStack>
   );
 };
