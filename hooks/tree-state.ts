@@ -192,7 +192,7 @@ export type ArrayUpdater<T> = {
     before?: string
   ): void;
   remove(key: string): T | undefined;
-  update(updater: (input: T[]) => string[] | undefined): void;
+  update(value: string[] | ((input: T[]) => string[] | undefined)): void;
 };
 
 export function useTreeArrayKeys<T, S extends string[]>(
@@ -246,7 +246,7 @@ export function useTreeArrayUpdater<T, S extends string[]>(
         root.updateByPath(
           path,
           (arr: any) => {
-            const order = updater(arr);
+            const order = updater instanceof Function ? updater(arr) : updater;
             if (order === undefined) return arr;
             const mapped = new Map(arr.map((x: { key: string }) => [x.key, x]));
             arr.length = 0;

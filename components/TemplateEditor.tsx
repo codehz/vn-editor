@@ -213,10 +213,6 @@ const EditorCore: FC<{
   );
 };
 
-function isEmpty(text: TemplatedText) {
-  return text.template === "";
-}
-
 export const TemplateEditor: FC<{
   tree: Tree<TemplatedText>;
   embed?: boolean;
