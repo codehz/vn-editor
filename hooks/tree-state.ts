@@ -191,6 +191,10 @@ export type ArrayUpdater<T> = {
     value: DistributiveOmit<T, "key"> & { key?: string },
     before?: string
   ): void;
+  insertAfter(
+    value: DistributiveOmit<T, "key"> & { key?: string },
+    before?: string
+  ): void;
   remove(key: string): T | undefined;
   update(value: string[] | ((input: T[]) => string[] | undefined)): void;
 };
@@ -226,6 +230,18 @@ export function useTreeArrayUpdater<T, S extends string[]>(
               : -1;
             if (idx < 0) arr.push({ key: rid(), ...value });
             else arr.splice(idx, 0, { key: rid(), ...value });
+            return arr;
+          },
+          true
+        );
+      },
+      insertAfter(value: any, after?: string): void {
+        root.updateByPath(
+          path,
+          (arr: any) => {
+            const idx = after ? arr.findIndex((x: any) => x.key === after) : -1;
+            if (idx < 0) arr.unshift({ key: rid(), ...value });
+            else arr.splice(idx + 1, 0, { key: rid(), ...value });
             return arr;
           },
           true

@@ -1,5 +1,6 @@
 // import { Picker } from "@react-native-picker/picker";
-import { Box, HStack, Input, Select, VStack, Text } from "native-base";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Box, HStack, Input, Select, VStack, Text, Badge, IconButton, Icon } from "native-base";
 import React, { FC, useState } from "react";
 import { TouchableOpacity, View } from "react-native";
 import {
@@ -56,11 +57,16 @@ const PlainTextEditor: FC<{ tree: Tree<string>; label: string }> = ({
   tree,
   label,
 }) => {
-  // const [value, setValue] = useLens(tree);
   const value = useTreeValue(tree);
   const setValue = useTreeUpdater(tree);
   return (
-    <Input flex={1} placeholder={label} value={value} onChangeText={setValue} />
+    <Input
+      flex={1}
+      placeholder={label}
+      padding={1}
+      value={value}
+      onChangeText={setValue}
+    />
   );
 };
 
@@ -70,21 +76,22 @@ const LiteralEditor: FC<{
   <PlainTextEditor tree={useSubTree(tree, "value")} label="literal" />
 );
 
-function getType(x: Expression) {
-  return x.type;
-}
-
-const EditorCore: FC<{ tree: Tree<Expression> }> = ({ tree }) => {
-  const value = useTreeValue(tree, "type");
+const EditorCore: FC<{ tree: Tree<Expression>; prefix?: string }> = ({
+  tree,
+  prefix,
+}) => {
+  const type = useTreeValue(tree, "type");
   return (
-    <HStack space={1}>
-      <Select selectedValue={value} minWidth={150} placeholder="choice type">
-        <Select.Item label="literal value" value="literal" />
-        <Select.Item label="variable reference" value="variable" />
-        <Select.Item label="builtin function" value="builtin" />
-      </Select>
-      {value === "literal" ? <LiteralEditor tree={tree as any} /> : <></>}
-    </HStack>
+    <VStack space={1}>
+      <HStack alignItems="center" space={1}>
+        <Text>
+          {prefix}
+          {type}
+        </Text>
+        <IconButton icon={<Icon as={MaterialCommunityIcons} name="swap-horizontal" />} size={5} padding={1}  />
+      </HStack>
+      {type === "literal" ? <LiteralEditor tree={tree as any} /> : <></>}
+    </VStack>
   );
 };
 
@@ -92,13 +99,9 @@ const ExpressionEditor: FC<{
   tree: Tree<Expression>;
   prefix?: string;
 }> = ({ tree, prefix }) => {
-  const [editMode, setEditMode] = useState(false);
   return (
     <VStack w="100%" space={1}>
-      <TouchableOpacity onPress={() => setEditMode((x) => !x)}>
-        <ExpressionRenderer expr={tree} prefix={prefix} />
-      </TouchableOpacity>
-      {editMode && <EditorCore tree={tree} />}
+      <EditorCore tree={tree} prefix={prefix} />
     </VStack>
   );
 };

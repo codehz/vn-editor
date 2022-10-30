@@ -22,11 +22,7 @@ export type TemplatedText = {
   params: Expression[];
 };
 export type Statement = (
-  | {
-      type: "text";
-      text: TemplatedText;
-      modifiers: Modifier[];
-    }
+  | { type: "text"; text: TemplatedText; modifiers: Modifier[] }
   | { type: "action"; name: string; command: string; params: Expression[] }
   | { type: "assignment"; variable: string; value: Expression }
   | { type: "choices"; choices: Choice[] }

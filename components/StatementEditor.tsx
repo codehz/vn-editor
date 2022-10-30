@@ -20,17 +20,11 @@ import ChoiceEditor from "./ChoiceEditor";
 import { TreeProxy } from "./TreeProxy";
 import { TemplateEditor } from "./TemplateEditor";
 
-function getType<T>(x: { type: T }): T {
-  return x.type;
-}
-
 const StatementEditor: FC<{ tree: Tree<Statement[]>; id: string }> = ({
   tree,
   id,
 }) => {
   const stmt = useSubTree(tree, id);
-  // console.log(stmt + "", id);
-  // const type = use(stmt, getType);
   const type = useTreeValue(stmt, "type");
   if (type === "text") {
     return (

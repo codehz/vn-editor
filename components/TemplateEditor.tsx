@@ -7,6 +7,7 @@ import {
   Box,
   CheckIcon,
   DeleteIcon,
+  IconButton,
 } from "native-base";
 import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { InputAccessoryView, TouchableOpacity } from "react-native";
@@ -187,24 +188,24 @@ const EditorCore: FC<{
     <>
       <InputAccessoryView nativeID={id} backgroundColor="white">
         <Button.Group isAttached bgColor="white" justifyContent="flex-end">
-          <Button
+          <IconButton
             colorScheme="danger"
             variant="ghost"
-            leftIcon={<DeleteIcon />}
+            icon={<DeleteIcon />}
             onPress={remove}
-          >
-            REMOVE
-          </Button>
-          <Button variant="ghost" leftIcon={<CheckIcon />} onPress={onExit}>
-            DONE
-          </Button>
+          />
+          <IconButton variant="ghost" icon={<CheckIcon />} onPress={onExit} />
         </Button.Group>
       </InputAccessoryView>
       <VStack w="100%" space={1} padding={embed ? 1 : 0}>
         <EditTemplate tree={template} inputAccessoryViewID={id} />
-        {variables.map((x) => (
-          <EditParameterWrapper key={x} tree={params} name={x} />
-        ))}
+        {variables.length > 0 && (
+          <VStack space={1} paddingLeft={1}>
+            {variables.map((x) => (
+              <EditParameterWrapper key={x} tree={params} name={x} />
+            ))}
+          </VStack>
+        )}
       </VStack>
     </>
   );
