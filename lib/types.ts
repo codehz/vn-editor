@@ -19,7 +19,7 @@ export type Choice = {
 } & Keyd;
 export type TemplatedText = {
   template: string;
-  params: Record<string, Expression>;
+  params: Expression[];
 };
 export type Statement = (
   | {

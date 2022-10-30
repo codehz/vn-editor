@@ -1,30 +1,20 @@
 import { VStack, Button, ScrollView, Box } from "native-base";
-import React, { FC, useCallback, useEffect, useState } from "react";
-import { Keyboard } from "react-native";
-import {
-  createLens,
-  LensContext,
-  useDeriveLens,
-  useLens,
-  useLensUpdater,
-  useLensSnapshot,
-} from "../hooks/lenses-hooks";
-import { Document, Statement, Variable } from "../lib/types";
-import { arrayKeys, compareByJson, randomid } from "../lib/utils";
+import React, { FC } from "react";
+import { Document } from "../lib/types";
 import StatementEditor from "./StatementEditor";
 import VariableEditor from "./VariableEditor";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { TreeRoot, useSubTree, useTreeUpdater } from "../hooks/tree-state";
 
-const EditorLens = createLens<Document>({
+const EditorLens = new TreeRoot<Document>({
   variables: [],
   entrypoint: [],
   procs: [],
 });
 
-export const Editor = () => {
-  const update = useLensUpdater(EditorLens);
-  const variables = useDeriveLens(EditorLens, "variables");
-  const entrypoint = useDeriveLens(EditorLens, "entrypoint");
+export const Editor: FC = () => {
+  const update = useTreeUpdater(EditorLens);
+  const variables = useSubTree(EditorLens, "variables");
+  const entrypoint = useSubTree(EditorLens, "entrypoint");
   return (
     <Box safeArea>
       <ScrollView

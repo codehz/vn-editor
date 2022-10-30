@@ -2,12 +2,7 @@
 import { Box, HStack, Input, Select, VStack, Text } from "native-base";
 import React, { FC, useState } from "react";
 import { TouchableOpacity, View } from "react-native";
-import {
-  LensContext,
-  useDeriveLens,
-  useLens,
-  useLensSnapshot,
-} from "../hooks/lenses-hooks";
+import { Tree, useSubTree, useTreeUpdater, useTreeValue } from "../hooks/tree-state";
 import { Expression } from "../lib/types";
 
 const ExpressionRenderer: FC<{
@@ -49,28 +44,30 @@ const ExpressionRenderer: FC<{
   );
 };
 
-const PlainTextEditor: FC<{ lens: LensContext<string>; label: string }> = ({
+const PlainTextEditor: FC<{ lens: Tree<string>; label: string }> = ({
   lens,
   label,
 }) => {
-  const [value, setValue] = useLens(lens);
+  // const [value, setValue] = useLens(lens);
+  const value = useTreeValue(lens);
+  const setValue = useTreeUpdater(lens);
   return (
     <Input flex={1} placeholder={label} value={value} onChangeText={setValue} />
   );
 };
 
 const LiteralEditor: FC<{
-  lens: LensContext<Expression & { type: "literal" }>;
+  lens: Tree<Expression & { type: "literal" }>;
 }> = ({ lens }) => (
-  <PlainTextEditor lens={useDeriveLens(lens, "value")} label="literal" />
+  <PlainTextEditor lens={useSubTree(lens, "value")} label="literal" />
 );
 
 function getType(x: Expression) {
   return x.type;
 }
 
-const EditorCore: FC<{ lens: LensContext<Expression> }> = ({ lens }) => {
-  const value = useLensSnapshot(lens, getType);
+const EditorCore: FC<{ lens: Tree<Expression> }> = ({ lens }) => {
+  const value = useTreeValue(lens).type;
   return (
     <HStack space={1}>
       <Select selectedValue={value} minWidth={150} placeholder="choice type">
@@ -84,10 +81,10 @@ const EditorCore: FC<{ lens: LensContext<Expression> }> = ({ lens }) => {
 };
 
 const ExpressionEditor: FC<{
-  lens: LensContext<Expression>;
+  lens: Tree<Expression>;
   prefix?: string;
 }> = ({ lens, prefix }) => {
-  const value = useLensSnapshot(lens);
+  const value = useTreeValue(lens);
   const [editMode, setEditMode] = useState(false);
   return (
     <VStack w="100%" space={1}>

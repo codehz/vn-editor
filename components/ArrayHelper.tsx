@@ -4,7 +4,7 @@ import React, {
   useCallback,
   useContext,
 } from "react";
-import { LensContext, useLensUpdater } from "../hooks/lenses-hooks";
+import { Tree, useTreeArrayUpdater } from "../hooks/tree-state";
 
 const Context = createContext<() => void>(() => {});
 
@@ -12,17 +12,14 @@ export const useRemoveHandler = () => useContext(Context);
 
 export function ArrayRemoveHandler<T>({
   lens,
-  idx,
+  id,
   children,
 }: {
-  lens: LensContext<T[]>;
-  idx: number;
+  lens: Tree<T[]>;
+  id: string;
   children: ReactNode;
 }) {
-  const update = useLensUpdater(lens);
-  const handler = useCallback(
-    () => update((arr) => [...arr.slice(0, idx), ...arr.slice(idx + 1)]),
-    [idx]
-  );
+  const updater = useTreeArrayUpdater(lens);
+  const handler = useCallback(() => updater.remove(id), [id]);
   return <Context.Provider value={handler}>{children}</Context.Provider>;
 }

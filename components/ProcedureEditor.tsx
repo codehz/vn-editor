@@ -1,25 +1,17 @@
 import React, { FC } from "react";
 import { View } from "react-native";
-import {
-  LensContext,
-  useLensUpdater,
-  useLensSnapshot,
-} from "../hooks/lenses-hooks";
+import { Tree, useTreeArrayKeys } from "../hooks/tree-state";
 import { Procedure } from "../lib/types";
-import { arrayKeys, compareByJson } from "../lib/utils";
 
-const ProcedureEditor: FC<{ lens: LensContext<Procedure[]>; idx: number }> = ({
+const ProcedureEditor: FC<{ lens: Tree<Procedure[]>; idx: number }> = ({
   lens,
   idx,
 }) => {
   return <></>;
 };
 
-const ProcedureEditorList: FC<{ lens: LensContext<Procedure[]> }> = ({
-  lens,
-}) => {
-  const keys = useLensSnapshot(lens, arrayKeys, compareByJson);
-  const update = useLensUpdater(lens);
+const ProcedureEditorList: FC<{ lens: Tree<Procedure[]> }> = ({ lens }) => {
+  const keys = useTreeArrayKeys(lens);
   return (
     <View>
       {keys.map((key, idx) => (

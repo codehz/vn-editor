@@ -2,33 +2,28 @@ import {
   AddIcon,
   Badge,
   Box,
-  Button,
   DeleteIcon,
   HStack,
   IconButton,
-  Pressable,
   Spacer,
   VStack,
 } from "native-base";
 import React, { FC } from "react";
-import {
-  LensContext,
-  useDeriveLens,
-  useLens,
-  useLensSnapshot,
-  useLensUpdater,
-} from "../hooks/lenses-hooks";
 import { Choice } from "../lib/types";
-import { arrayKeys, compareByJson, randomid } from "../lib/utils";
-import { LensProxy } from "./LensProxy";
+import { TreeProxy } from "./TreeProxy";
 import { ArrayRemoveHandler, useRemoveHandler } from "./ArrayHelper";
 import StatementEditor from "./StatementEditor";
 import { TemplateEditor } from "./TemplateEditor";
-import { useEditMode, useNestedEditModeProvider } from "./EditMode";
+import {
+  Tree,
+  useSubTree,
+  useTreeArrayKeys,
+  useTreeArrayUpdater,
+} from "../hooks/tree-state";
 
-const ChoiceEditor: FC<{ lens: LensContext<Choice> }> = ({ lens }) => {
-  const text = useDeriveLens(lens, "text");
-  const body = useDeriveLens(lens, "body");
+const ChoiceEditor: FC<{ lens: Tree<Choice> }> = ({ lens }) => {
+  const text = useSubTree(lens, "text");
+  const body = useSubTree(lens, "body");
   return (
     <VStack borderWidth={1} borderColor="gray.200" borderRadius={5}>
       <TemplateEditor lens={text} embed />
@@ -39,9 +34,9 @@ const ChoiceEditor: FC<{ lens: LensContext<Choice> }> = ({ lens }) => {
   );
 };
 
-const ChoiceEditorList: FC<{ lens: LensContext<Choice[]> }> = ({ lens }) => {
-  const keys = useLensSnapshot(lens, arrayKeys, compareByJson);
-  const update = useLensUpdater(lens);
+const ChoiceEditorList: FC<{ lens: Tree<Choice[]> }> = ({ lens }) => {
+  const keys = useTreeArrayKeys(lens);
+  const updater = useTreeArrayUpdater(lens);
   const removeChoiceStatement = useRemoveHandler();
   return (
     <VStack
@@ -56,14 +51,10 @@ const ChoiceEditorList: FC<{ lens: LensContext<Choice[]> }> = ({ lens }) => {
           size={6}
           icon={<AddIcon />}
           onPress={() =>
-            update((list) => [
-              ...list,
-              {
-                key: randomid(),
-                body: [],
-                text: { template: "", params: {} },
-              },
-            ])
+            updater.insert({
+              body: [],
+              text: { template: "", params: [] },
+            })
           }
         />
         <Badge>Choice</Badge>
@@ -76,11 +67,11 @@ const ChoiceEditorList: FC<{ lens: LensContext<Choice[]> }> = ({ lens }) => {
         />
       </HStack>
       {/* <Badge>Choice</Badge> */}
-      {keys.map((key, i) => (
-        <ArrayRemoveHandler key={key} lens={lens} idx={i}>
-          <LensProxy lens={lens} props={[i]}>
+      {keys.map((key) => (
+        <ArrayRemoveHandler key={key} lens={lens} id={key}>
+          <TreeProxy tree={lens} prop={key}>
             {(lens) => <ChoiceEditor lens={lens} />}
-          </LensProxy>
+          </TreeProxy>
         </ArrayRemoveHandler>
       ))}
     </VStack>

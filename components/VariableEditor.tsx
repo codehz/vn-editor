@@ -1,54 +1,57 @@
 import React, { FC } from "react";
 import { Button, StyleSheet, TextInput, View } from "react-native";
 import {
-  LensContext,
-  useLens,
-  useLensUpdater,
-  useLensSnapshot,
-} from "../hooks/lenses-hooks";
+  Tree,
+  useSubTree,
+  useTreeArrayKeys,
+  useTreeArrayUpdater,
+  useTreeUpdater,
+  useTreeValue,
+} from "../hooks/tree-state";
 import { Variable } from "../lib/types";
-import { arrayKeys, compareByJson, randomid } from "../lib/utils";
 
-const VariableEditor: FC<{ lens: LensContext<Variable[]>; idx: number }> = ({
-  lens,
-  idx,
+const TreeTextEditor: FC<{ tree: Tree<string>; placeholder: string }> = ({
+  tree,
+  placeholder,
 }) => {
-  const [name, setName] = useLens(lens, idx, "name");
-  const [defaultValue, setDefaultValue] = useLens(lens, idx, "defaultValue");
+  const value = useTreeValue(tree);
+  const setValue = useTreeUpdater(tree);
+  return (
+    <TextInput
+      style={styles.variableTextInput}
+      placeholder={placeholder}
+      value={value}
+      onChangeText={setValue}
+    />
+  );
+};
+
+const VariableEditor: FC<{ lens: Tree<Variable[]>; id: string }> = ({
+  lens,
+  id,
+}) => {
+  const variable = useSubTree(lens, id);
+  const name = useSubTree(variable, "name");
+  const defaultValue = useSubTree(variable, "defaultValue");
   return (
     <View style={styles.variableEditor}>
-      <TextInput
-        style={styles.variableTextInput}
-        placeholder="variable name"
-        value={name}
-        onChangeText={setName}
-      />
-      <TextInput
-        style={styles.variableTextInput}
-        value={defaultValue}
-        placeholder="default values"
-        onChangeText={setDefaultValue}
-      />
+      <TreeTextEditor placeholder="variable name" tree={name} />
+      <TreeTextEditor placeholder="default values" tree={defaultValue} />
     </View>
   );
 };
 
-const VariableEditorList: FC<{ lens: LensContext<Variable[]> }> = ({
-  lens,
-}) => {
-  const update = useLensUpdater(lens);
-  const snapshot = useLensSnapshot(lens, arrayKeys, compareByJson);
+const VariableEditorList: FC<{ lens: Tree<Variable[]> }> = ({ lens }) => {
+  const updater = useTreeArrayUpdater(lens);
+  const keys = useTreeArrayKeys(lens);
   return (
     <View>
-      {snapshot.map((key, i) => (
-        <VariableEditor key={key} lens={lens} idx={i} />
+      {keys.map((key) => (
+        <VariableEditor key={key} lens={lens} id={key} />
       ))}
       <Button
         onPress={() => {
-          update((x) => [
-            ...x,
-            { key: randomid(), name: "unknown", defaultValue: "" },
-          ]);
+          updater.insert({ name: "unknown", defaultValue: "" });
         }}
         title="add variable"
       />

@@ -3,29 +3,25 @@ import {
   Text,
   Button,
   VStack,
-  HStack,
-  IconButton,
   AddIcon,
   Box,
   CheckIcon,
   DeleteIcon,
 } from "native-base";
-import { ColorType } from "native-base/lib/typescript/components/types";
 import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
-import { InputAccessoryView, TouchableOpacity, Button as NativeButton } from "react-native";
+import { InputAccessoryView, TouchableOpacity } from "react-native";
 import {
-  LensContext,
-  useDeriveLens,
-  useLens,
-  useLensUpdater,
-  useLensSnapshot,
-  inspectLens,
-} from "../hooks/lenses-hooks";
+  Tree,
+  useSubTree,
+  useTreeArrayUpdater,
+  useTreeSnapshot,
+  useTreeUpdater,
+  useTreeValue,
+} from "../hooks/tree-state";
 import { tokenizeTemplate } from "../lib/tokenizer";
 import { Expression, TemplatedText } from "../lib/types";
 import { compareByJson, randomid } from "../lib/utils";
 import { useRemoveHandler } from "./ArrayHelper";
-import { AutoSizedTextArea } from "./AutoSizedTextArea";
 import { useEditMode } from "./EditMode";
 import ExpressionEditor from "./ExpressionEditor";
 
@@ -42,32 +38,48 @@ export function getVariablesFromTemplate(input: string): [string[], any] {
   return [[...variables], error];
 }
 
-const VariableRenderer: FC<{ name: string; value: Expression | undefined }> = ({
+const VariableRendererInner: FC<{ name: string; tree: Tree<Expression[]> }> = ({
+  tree,
   name,
-  value,
 }) => {
-  if (!value)
+  const value = useTreeValue(tree, name);
+  return <ExpressionEditor.Renderer value={value} />;
+};
+
+const VariableRenderer: FC<{ name: string; tree: Tree<Expression[]> }> = ({
+  name,
+  tree,
+}) => {
+  const exists = useTreeSnapshot(
+    tree,
+    useCallback(
+      (value: Expression[]) => value.some((x) => x.key === name),
+      [name]
+    )
+  );
+  if (!exists)
     return (
       <Box borderRadius={5} paddingX={1} borderWidth={1} borderColor="red.500">
         <Text color="red.500">{name}</Text>
       </Box>
     );
-  return <ExpressionEditor.Renderer value={value} />;
+  return <VariableRendererInner tree={tree} name={name} />;
 };
 
-const Renderer: FC<{ lens: LensContext<TemplatedText>; embed: boolean }> = ({
+const Renderer: FC<{ lens: Tree<TemplatedText>; embed: boolean }> = ({
   lens,
   embed,
 }) => {
-  const [value] = useLens(lens);
+  const template = useTreeValue(lens, "template");
+  const params = useSubTree(lens, "params");
   const { tokens, error } = useMemo(() => {
     try {
-      const tokens = [...tokenizeTemplate(value.template)];
+      const tokens = [...tokenizeTemplate(template)];
       return { tokens };
     } catch (error) {
       return { error };
     }
-  }, [value.template]);
+  }, [template]);
   if (error)
     return (
       <Box borderRadius={5} paddingX={1} borderWidth={1} borderColor="red.500">
@@ -82,11 +94,7 @@ const Renderer: FC<{ lens: LensContext<TemplatedText>; embed: boolean }> = ({
             {token.value}
           </Text>
         ) : (
-          <VariableRenderer
-            key={i}
-            name={token.value}
-            value={value.params[token.value]}
-          />
+          <VariableRenderer key={i} name={token.value} tree={params} />
         )
       )}
     </Text>
@@ -107,10 +115,11 @@ const Renderer: FC<{ lens: LensContext<TemplatedText>; embed: boolean }> = ({
 };
 
 const EditTemplate: FC<{
-  lens: LensContext<string>;
+  lens: Tree<string>;
   inputAccessoryViewID: string;
 }> = ({ lens, inputAccessoryViewID }) => {
-  const [value, setValue] = useLens(lens);
+  const value = useTreeValue(lens);
+  const setValue = useTreeUpdater(lens);
   return (
     <Input
       value={value}
@@ -124,22 +133,25 @@ const EditTemplate: FC<{
 };
 
 const EditParameter: FC<{
-  lens: LensContext<Record<string, Expression>>;
+  lens: Tree<Expression[]>;
   name: string;
 }> = ({ lens, name }) => {
-  const exprlens = useDeriveLens(lens, name);
+  const exprlens = useSubTree(lens, name);
   return <ExpressionEditor lens={exprlens} prefix={name + ": "} />;
 };
 
 const EditParameterWrapper: FC<{
-  lens: LensContext<Record<string, Expression>>;
+  lens: Tree<Expression[]>;
   name: string;
 }> = ({ lens, name }) => {
-  const exists = useLensSnapshot(
+  const exists = useTreeSnapshot(
     lens,
-    useCallback((obj: object) => name in obj, [name])
+    useCallback(
+      (value: Expression[]) => value.some((x) => x.key === name),
+      [name]
+    )
   );
-  const update = useLensUpdater(lens);
+  const updater = useTreeArrayUpdater(lens);
   if (exists) {
     return <EditParameter lens={lens} name={name} />;
   } else {
@@ -149,10 +161,11 @@ const EditParameterWrapper: FC<{
         startIcon={<AddIcon />}
         size="xs"
         onPress={() =>
-          update((x) => ({
-            ...x,
-            [name]: { type: "literal", key: randomid(), value: "" },
-          }))
+          updater.insert({
+            key: name,
+            type: "literal",
+            value: "",
+          })
         }
       >
         {name}
@@ -162,13 +175,13 @@ const EditParameterWrapper: FC<{
 };
 
 const EditorCore: FC<{
-  lens: LensContext<TemplatedText>;
+  lens: Tree<TemplatedText>;
   onExit(): void;
   embed: boolean;
 }> = ({ lens, onExit, embed }) => {
-  const template = useDeriveLens(lens, "template");
-  const params = useDeriveLens(lens, "params");
-  const [keys] = useLensSnapshot(
+  const template = useSubTree(lens, "template");
+  const params = useSubTree(lens, "params");
+  const [variables] = useTreeSnapshot(
     template,
     getVariablesFromTemplate,
     compareByJson
@@ -193,7 +206,7 @@ const EditorCore: FC<{
         </Button.Group>
       </InputAccessoryView>
       <EditTemplate lens={template} inputAccessoryViewID={id} />
-      {keys.map((x) => (
+      {variables.map((x) => (
         <EditParameterWrapper key={x} lens={params} name={x} />
       ))}
     </VStack>
@@ -205,22 +218,19 @@ function isEmpty(text: TemplatedText) {
 }
 
 export const TemplateEditor: FC<{
-  lens: LensContext<TemplatedText>;
+  lens: Tree<TemplatedText>;
   embed?: boolean;
 }> = ({ lens, embed = false }) => {
   const [editMode, setEditMode] = useEditMode(() =>
-    update((tmp) => {
-      const [variables, error] = getVariablesFromTemplate(tmp.template);
-      if (error) return tmp;
-      const params = Object.fromEntries(
-        Object.entries(tmp.params).filter(([k]) => variables.includes(k))
-      );
-      return { ...tmp, params };
+    updater.update((arr) => {
+      const [variables, error] = getVariablesFromTemplate(lens.value.template);
+      if (error) return undefined;
+      return variables.filter((it) => arr.some((x) => x.key === it));
     })
   );
-  const update = useLensUpdater(lens);
+  const updater = useTreeArrayUpdater(lens, "params");
   useEffect(() => {
-    if (inspectLens(lens, "template") === "") setEditMode(true);
+    if (lens.value.template === "") setEditMode(true);
   }, []);
   return editMode ? (
     <EditorCore lens={lens} embed={embed} onExit={() => setEditMode(false)} />

@@ -5,66 +5,63 @@ import {
   Icon,
   ThreeDotsIcon,
   IconButton,
-  HStack,
 } from "native-base";
 import React, { FC } from "react";
 import {
-  LensContext,
-  useLens,
-  useLensUpdater,
-  useLensSnapshot,
-  useDeriveLens,
-} from "../hooks/lenses-hooks";
+  Tree,
+  useSubTree,
+  useTreeArrayKeys,
+  useTreeArrayUpdater,
+  useTreeValue,
+} from "../hooks/tree-state";
 import { Statement } from "../lib/types";
-import { arrayKeys, compareByJson, randomid } from "../lib/utils";
 import { ArrayRemoveHandler } from "./ArrayHelper";
 import ChoiceEditor from "./ChoiceEditor";
-import { LensProxy } from "./LensProxy";
+import { TreeProxy } from "./TreeProxy";
 import { TemplateEditor } from "./TemplateEditor";
 
 function getType<T>(x: { type: T }): T {
   return x.type;
 }
 
-const StatementEditor: FC<{ lens: LensContext<Statement[]>; idx: number }> = ({
+const StatementEditor: FC<{ lens: Tree<Statement[]>; id: string }> = ({
   lens,
-  idx,
+  id,
 }) => {
-  const stmt = useDeriveLens(lens, idx);
-  console.log(stmt + "", idx);
-  const type = useLensSnapshot(stmt, getType);
+  const stmt = useSubTree(lens, id);
+  // console.log(stmt + "", id);
+  // const type = use(stmt, getType);
+  const type = useTreeValue(stmt, "type");
   if (type === "text") {
     return (
-      <LensProxy
-        lens={stmt as any as LensContext<Statement & { type: "text" }>}
-        props={["text"]}
+      <TreeProxy
+        tree={stmt as any as Tree<Statement & { type: "text" }>}
+        prop="text"
       >
         {(lens) => <TemplateEditor lens={lens} />}
-      </LensProxy>
+      </TreeProxy>
     );
   } else if (type === "choices") {
     return (
-      <LensProxy
-        lens={stmt as any as LensContext<Statement & { type: "choices" }>}
-        props={["choices"]}
+      <TreeProxy
+        tree={stmt as any as Tree<Statement & { type: "choices" }>}
+        prop="choices"
       >
         {(lens) => <ChoiceEditor.List lens={lens} />}
-      </LensProxy>
+      </TreeProxy>
     );
   }
   return <></>;
 };
 
-const StatementEditorList: FC<{ lens: LensContext<Statement[]> }> = ({
-  lens,
-}) => {
-  const stmtkeys = useLensSnapshot(lens, arrayKeys, compareByJson);
-  const update = useLensUpdater(lens);
+const StatementEditorList: FC<{ lens: Tree<Statement[]> }> = ({ lens }) => {
+  const stmtkeys = useTreeArrayKeys(lens);
+  const updater = useTreeArrayUpdater(lens);
   return (
     <VStack space={1} alignSelf="stretch">
       {stmtkeys.map((key, idx) => (
-        <ArrayRemoveHandler key={key} lens={lens} idx={idx}>
-          <StatementEditor lens={lens} idx={idx} />
+        <ArrayRemoveHandler key={key} lens={lens} id={key}>
+          <StatementEditor lens={lens} id={key} />
         </ArrayRemoveHandler>
       ))}
       <Button.Group isAttached>
@@ -73,15 +70,11 @@ const StatementEditorList: FC<{ lens: LensContext<Statement[]> }> = ({
           variant="solid"
           icon={<Icon as={MaterialCommunityIcons} name="card-text" />}
           onPress={() => {
-            update((x) => [
-              ...x,
-              {
-                key: randomid(),
-                type: "text",
-                text: { template: "", params: {} },
-                modifiers: [],
-              },
-            ]);
+            updater.insert({
+              type: "text",
+              text: { template: "", params: [] },
+              modifiers: [],
+            });
           }}
         />
         <IconButton
@@ -89,14 +82,10 @@ const StatementEditorList: FC<{ lens: LensContext<Statement[]> }> = ({
           variant="outline"
           icon={<Icon as={MaterialCommunityIcons} name="arrow-decision" />}
           onPress={() => {
-            update((x) => [
-              ...x,
-              {
-                key: randomid(),
-                type: "choices",
-                choices: [],
-              },
-            ]);
+            updater.insert({
+              type: "choices",
+              choices: [],
+            });
           }}
         />
         <IconButton size={6} variant="outline" icon={<ThreeDotsIcon />} />
