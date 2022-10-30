@@ -3,10 +3,10 @@ import { TextArea } from "native-base";
 import { LensContext, useLens } from "../hooks/lenses-hooks";
 
 export const AutoSizedTextArea: FC<{
-  lens: LensContext<string>;
+  tree: LensContext<string>;
   placeholder: string;
-}> = ({ lens, placeholder }) => {
-  const [value, setValue] = useLens(lens);
+}> = ({ tree, placeholder }) => {
+  const [value, setValue] = useLens(tree);
   const [contentHeight, setContentHeight] = useState(0);
   return (
     <TextArea

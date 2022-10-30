@@ -66,12 +66,12 @@ const VariableRenderer: FC<{ name: string; tree: Tree<Expression[]> }> = ({
   return <VariableRendererInner tree={tree} name={name} />;
 };
 
-const Renderer: FC<{ lens: Tree<TemplatedText>; embed: boolean }> = ({
-  lens,
+const Renderer: FC<{ tree: Tree<TemplatedText>; embed: boolean }> = ({
+  tree,
   embed,
 }) => {
-  const template = useTreeValue(lens, "template");
-  const params = useSubTree(lens, "params");
+  const template = useTreeValue(tree, "template");
+  const params = useSubTree(tree, "params");
   const { tokens, error } = useMemo(() => {
     try {
       const tokens = [...tokenizeTemplate(template)];
@@ -115,11 +115,11 @@ const Renderer: FC<{ lens: Tree<TemplatedText>; embed: boolean }> = ({
 };
 
 const EditTemplate: FC<{
-  lens: Tree<string>;
+  tree: Tree<string>;
   inputAccessoryViewID: string;
-}> = ({ lens, inputAccessoryViewID }) => {
-  const value = useTreeValue(lens);
-  const setValue = useTreeUpdater(lens);
+}> = ({ tree, inputAccessoryViewID }) => {
+  const value = useTreeValue(tree);
+  const setValue = useTreeUpdater(tree);
   return (
     <Input
       value={value}
@@ -133,27 +133,27 @@ const EditTemplate: FC<{
 };
 
 const EditParameter: FC<{
-  lens: Tree<Expression[]>;
+  tree: Tree<Expression[]>;
   name: string;
-}> = ({ lens, name }) => {
-  const exprlens = useSubTree(lens, name);
-  return <ExpressionEditor lens={exprlens} prefix={name + ": "} />;
+}> = ({ tree, name }) => {
+  const exprlens = useSubTree(tree, name);
+  return <ExpressionEditor tree={exprlens} prefix={name + ": "} />;
 };
 
 const EditParameterWrapper: FC<{
-  lens: Tree<Expression[]>;
+  tree: Tree<Expression[]>;
   name: string;
-}> = ({ lens, name }) => {
+}> = ({ tree, name }) => {
   const exists = useTreeSnapshot(
-    lens,
+    tree,
     useCallback(
       (value: Expression[]) => value.some((x) => x.key === name),
       [name]
     )
   );
-  const updater = useTreeArrayUpdater(lens);
+  const updater = useTreeArrayUpdater(tree);
   if (exists) {
-    return <EditParameter lens={lens} name={name} />;
+    return <EditParameter tree={tree} name={name} />;
   } else {
     return (
       <Button
@@ -175,12 +175,12 @@ const EditParameterWrapper: FC<{
 };
 
 const EditorCore: FC<{
-  lens: Tree<TemplatedText>;
+  tree: Tree<TemplatedText>;
   onExit(): void;
   embed: boolean;
-}> = ({ lens, onExit, embed }) => {
-  const template = useSubTree(lens, "template");
-  const params = useSubTree(lens, "params");
+}> = ({ tree, onExit, embed }) => {
+  const template = useSubTree(tree, "template");
+  const params = useSubTree(tree, "params");
   const [variables] = useTreeSnapshot(
     template,
     getVariablesFromTemplate,
@@ -205,9 +205,9 @@ const EditorCore: FC<{
           </Button>
         </Button.Group>
       </InputAccessoryView>
-      <EditTemplate lens={template} inputAccessoryViewID={id} />
+      <EditTemplate tree={template} inputAccessoryViewID={id} />
       {variables.map((x) => (
-        <EditParameterWrapper key={x} lens={params} name={x} />
+        <EditParameterWrapper key={x} tree={params} name={x} />
       ))}
     </VStack>
   );
@@ -218,25 +218,25 @@ function isEmpty(text: TemplatedText) {
 }
 
 export const TemplateEditor: FC<{
-  lens: Tree<TemplatedText>;
+  tree: Tree<TemplatedText>;
   embed?: boolean;
-}> = ({ lens, embed = false }) => {
+}> = ({ tree, embed = false }) => {
   const [editMode, setEditMode] = useEditMode(() =>
     updater.update((arr) => {
-      const [variables, error] = getVariablesFromTemplate(lens.value.template);
+      const [variables, error] = getVariablesFromTemplate(tree.value.template);
       if (error) return undefined;
       return variables.filter((it) => arr.some((x) => x.key === it));
     })
   );
-  const updater = useTreeArrayUpdater(lens, "params");
+  const updater = useTreeArrayUpdater(tree, "params");
   useEffect(() => {
-    if (lens.value.template === "") setEditMode(true);
+    if (tree.value.template === "") setEditMode(true);
   }, []);
   return editMode ? (
-    <EditorCore lens={lens} embed={embed} onExit={() => setEditMode(false)} />
+    <EditorCore tree={tree} embed={embed} onExit={() => setEditMode(false)} />
   ) : (
     <TouchableOpacity onPress={() => setEditMode(true)}>
-      <Renderer lens={lens} embed={embed} />
+      <Renderer tree={tree} embed={embed} />
     </TouchableOpacity>
   );
 };

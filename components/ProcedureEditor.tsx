@@ -3,19 +3,19 @@ import { View } from "react-native";
 import { Tree, useTreeArrayKeys } from "../hooks/tree-state";
 import { Procedure } from "../lib/types";
 
-const ProcedureEditor: FC<{ lens: Tree<Procedure[]>; idx: number }> = ({
-  lens,
+const ProcedureEditor: FC<{ tree: Tree<Procedure[]>; idx: number }> = ({
+  tree,
   idx,
 }) => {
   return <></>;
 };
 
-const ProcedureEditorList: FC<{ lens: Tree<Procedure[]> }> = ({ lens }) => {
-  const keys = useTreeArrayKeys(lens);
+const ProcedureEditorList: FC<{ tree: Tree<Procedure[]> }> = ({ tree }) => {
+  const keys = useTreeArrayKeys(tree);
   return (
     <View>
       {keys.map((key, idx) => (
-        <ProcedureEditor key={key} lens={lens} idx={idx} />
+        <ProcedureEditor key={key} tree={tree} idx={idx} />
       ))}
     </View>
   );

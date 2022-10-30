@@ -44,30 +44,30 @@ const ExpressionRenderer: FC<{
   );
 };
 
-const PlainTextEditor: FC<{ lens: Tree<string>; label: string }> = ({
-  lens,
+const PlainTextEditor: FC<{ tree: Tree<string>; label: string }> = ({
+  tree,
   label,
 }) => {
-  // const [value, setValue] = useLens(lens);
-  const value = useTreeValue(lens);
-  const setValue = useTreeUpdater(lens);
+  // const [value, setValue] = useLens(tree);
+  const value = useTreeValue(tree);
+  const setValue = useTreeUpdater(tree);
   return (
     <Input flex={1} placeholder={label} value={value} onChangeText={setValue} />
   );
 };
 
 const LiteralEditor: FC<{
-  lens: Tree<Expression & { type: "literal" }>;
-}> = ({ lens }) => (
-  <PlainTextEditor lens={useSubTree(lens, "value")} label="literal" />
+  tree: Tree<Expression & { type: "literal" }>;
+}> = ({ tree }) => (
+  <PlainTextEditor tree={useSubTree(tree, "value")} label="literal" />
 );
 
 function getType(x: Expression) {
   return x.type;
 }
 
-const EditorCore: FC<{ lens: Tree<Expression> }> = ({ lens }) => {
-  const value = useTreeValue(lens).type;
+const EditorCore: FC<{ tree: Tree<Expression> }> = ({ tree }) => {
+  const value = useTreeValue(tree).type;
   return (
     <HStack space={1}>
       <Select selectedValue={value} minWidth={150} placeholder="choice type">
@@ -75,23 +75,23 @@ const EditorCore: FC<{ lens: Tree<Expression> }> = ({ lens }) => {
         <Select.Item label="variable reference" value="variable" />
         <Select.Item label="builtin function" value="builtin" />
       </Select>
-      {value === "literal" ? <LiteralEditor lens={lens as any} /> : <></>}
+      {value === "literal" ? <LiteralEditor tree={tree as any} /> : <></>}
     </HStack>
   );
 };
 
 const ExpressionEditor: FC<{
-  lens: Tree<Expression>;
+  tree: Tree<Expression>;
   prefix?: string;
-}> = ({ lens, prefix }) => {
-  const value = useTreeValue(lens);
+}> = ({ tree, prefix }) => {
+  const value = useTreeValue(tree);
   const [editMode, setEditMode] = useState(false);
   return (
     <VStack w="100%" space={1}>
       <TouchableOpacity onPress={() => setEditMode((x) => !x)}>
         <ExpressionRenderer value={value} prefix={prefix} />
       </TouchableOpacity>
-      {editMode && <EditorCore lens={lens} />}
+      {editMode && <EditorCore tree={tree} />}
     </VStack>
   );
 };

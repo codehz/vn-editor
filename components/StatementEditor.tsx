@@ -24,11 +24,11 @@ function getType<T>(x: { type: T }): T {
   return x.type;
 }
 
-const StatementEditor: FC<{ lens: Tree<Statement[]>; id: string }> = ({
-  lens,
+const StatementEditor: FC<{ tree: Tree<Statement[]>; id: string }> = ({
+  tree,
   id,
 }) => {
-  const stmt = useSubTree(lens, id);
+  const stmt = useSubTree(tree, id);
   // console.log(stmt + "", id);
   // const type = use(stmt, getType);
   const type = useTreeValue(stmt, "type");
@@ -38,7 +38,7 @@ const StatementEditor: FC<{ lens: Tree<Statement[]>; id: string }> = ({
         tree={stmt as any as Tree<Statement & { type: "text" }>}
         prop="text"
       >
-        {(lens) => <TemplateEditor lens={lens} />}
+        {(tree) => <TemplateEditor tree={tree} />}
       </TreeProxy>
     );
   } else if (type === "choices") {
@@ -47,21 +47,21 @@ const StatementEditor: FC<{ lens: Tree<Statement[]>; id: string }> = ({
         tree={stmt as any as Tree<Statement & { type: "choices" }>}
         prop="choices"
       >
-        {(lens) => <ChoiceEditor.List lens={lens} />}
+        {(tree) => <ChoiceEditor.List tree={tree} />}
       </TreeProxy>
     );
   }
   return <></>;
 };
 
-const StatementEditorList: FC<{ lens: Tree<Statement[]> }> = ({ lens }) => {
-  const stmtkeys = useTreeArrayKeys(lens);
-  const updater = useTreeArrayUpdater(lens);
+const StatementEditorList: FC<{ tree: Tree<Statement[]> }> = ({ tree }) => {
+  const stmtkeys = useTreeArrayKeys(tree);
+  const updater = useTreeArrayUpdater(tree);
   return (
     <VStack space={1} alignSelf="stretch">
       {stmtkeys.map((key, idx) => (
-        <ArrayRemoveHandler key={key} lens={lens} id={key}>
-          <StatementEditor lens={lens} id={key} />
+        <ArrayRemoveHandler key={key} tree={tree} id={key}>
+          <StatementEditor tree={tree} id={key} />
         </ArrayRemoveHandler>
       ))}
       <Button.Group isAttached>

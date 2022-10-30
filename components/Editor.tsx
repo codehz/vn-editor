@@ -34,8 +34,8 @@ export const Editor: FC = () => {
           >
             reset
           </Button>
-          <VariableEditor.List lens={variables} />
-          <StatementEditor.List lens={entrypoint} />
+          <VariableEditor.List tree={variables} />
+          <StatementEditor.List tree={entrypoint} />
         </VStack>
       </ScrollView>
     </Box>

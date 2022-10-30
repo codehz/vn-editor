@@ -21,22 +21,22 @@ import {
   useTreeArrayUpdater,
 } from "../hooks/tree-state";
 
-const ChoiceEditor: FC<{ lens: Tree<Choice> }> = ({ lens }) => {
-  const text = useSubTree(lens, "text");
-  const body = useSubTree(lens, "body");
+const ChoiceEditor: FC<{ tree: Tree<Choice> }> = ({ tree }) => {
+  const text = useSubTree(tree, "text");
+  const body = useSubTree(tree, "body");
   return (
     <VStack borderWidth={1} borderColor="gray.200" borderRadius={5}>
-      <TemplateEditor lens={text} embed />
+      <TemplateEditor tree={text} embed />
       <Box padding={1}>
-        <StatementEditor.List lens={body} />
+        <StatementEditor.List tree={body} />
       </Box>
     </VStack>
   );
 };
 
-const ChoiceEditorList: FC<{ lens: Tree<Choice[]> }> = ({ lens }) => {
-  const keys = useTreeArrayKeys(lens);
-  const updater = useTreeArrayUpdater(lens);
+const ChoiceEditorList: FC<{ tree: Tree<Choice[]> }> = ({ tree }) => {
+  const keys = useTreeArrayKeys(tree);
+  const updater = useTreeArrayUpdater(tree);
   const removeChoiceStatement = useRemoveHandler();
   return (
     <VStack
@@ -68,9 +68,9 @@ const ChoiceEditorList: FC<{ lens: Tree<Choice[]> }> = ({ lens }) => {
       </HStack>
       {/* <Badge>Choice</Badge> */}
       {keys.map((key) => (
-        <ArrayRemoveHandler key={key} lens={lens} id={key}>
-          <TreeProxy tree={lens} prop={key}>
-            {(lens) => <ChoiceEditor lens={lens} />}
+        <ArrayRemoveHandler key={key} tree={tree} id={key}>
+          <TreeProxy tree={tree} prop={key}>
+            {(tree) => <ChoiceEditor tree={tree} />}
           </TreeProxy>
         </ArrayRemoveHandler>
       ))}

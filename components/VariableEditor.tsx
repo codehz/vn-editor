@@ -26,11 +26,11 @@ const TreeTextEditor: FC<{ tree: Tree<string>; placeholder: string }> = ({
   );
 };
 
-const VariableEditor: FC<{ lens: Tree<Variable[]>; id: string }> = ({
-  lens,
+const VariableEditor: FC<{ tree: Tree<Variable[]>; id: string }> = ({
+  tree,
   id,
 }) => {
-  const variable = useSubTree(lens, id);
+  const variable = useSubTree(tree, id);
   const name = useSubTree(variable, "name");
   const defaultValue = useSubTree(variable, "defaultValue");
   return (
@@ -41,13 +41,13 @@ const VariableEditor: FC<{ lens: Tree<Variable[]>; id: string }> = ({
   );
 };
 
-const VariableEditorList: FC<{ lens: Tree<Variable[]> }> = ({ lens }) => {
-  const updater = useTreeArrayUpdater(lens);
-  const keys = useTreeArrayKeys(lens);
+const VariableEditorList: FC<{ tree: Tree<Variable[]> }> = ({ tree }) => {
+  const updater = useTreeArrayUpdater(tree);
+  const keys = useTreeArrayKeys(tree);
   return (
     <View>
       {keys.map((key) => (
-        <VariableEditor key={key} lens={lens} id={key} />
+        <VariableEditor key={key} tree={tree} id={key} />
       ))}
       <Button
         onPress={() => {
