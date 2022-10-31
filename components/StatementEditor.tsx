@@ -1,13 +1,13 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import {
   VStack,
   Button,
   Icon,
-  ThreeDotsIcon,
   IconButton,
 } from "native-base";
 import React, { FC } from "react";
 import {
+  InsertPlace,
   Tree,
   useSubTree,
   useTreeArrayKeys,
@@ -19,6 +19,7 @@ import { ArrayRemoveHandler } from "./ArrayHelper";
 import ChoiceEditor from "./ChoiceEditor";
 import { TreeProxy } from "./TreeProxy";
 import { TemplateEditor } from "./TemplateEditor";
+import { WithContextMenu } from "./ContextMenu";
 
 const StatementEditor: FC<{ tree: Tree<Statement[]>; id: string }> = ({
   tree,
@@ -48,42 +49,76 @@ const StatementEditor: FC<{ tree: Tree<Statement[]>; id: string }> = ({
   return <></>;
 };
 
+export const StatementContextMenu: FC<{
+  tree: Tree<Statement[]>;
+  place?: InsertPlace;
+  embed?: true;
+}> = ({ tree, place, embed }) => {
+  const updater = useTreeArrayUpdater(tree);
+  return (
+    <Button.Group isAttached>
+      <IconButton
+        size={embed ? undefined : 6}
+        variant={embed ? "ghost" : "solid"}
+        icon={<Icon as={MaterialCommunityIcons} name="card-text" />}
+        onPress={() => {
+          updater.insert(
+            {
+              type: "text",
+              text: { template: "", params: [] },
+              modifiers: [],
+            },
+            place
+          );
+        }}
+      />
+      <IconButton
+        size={embed ? undefined : 6}
+        variant={embed ? "ghost" : "outline"}
+        icon={<Icon as={MaterialCommunityIcons} name="arrow-decision" />}
+        onPress={() => {
+          updater.insert(
+            {
+              type: "choices",
+              choices: [],
+            },
+            place
+          );
+        }}
+      />
+      <IconButton
+        size={embed ? undefined : 6}
+        variant={embed ? "ghost" : "outline"}
+        icon={<Icon as={MaterialIcons} name="more-horiz" />}
+      />
+    </Button.Group>
+  );
+};
+
+const StatementWrapper: FC<{ tree: Tree<Statement[]>; id: string }> = ({
+  tree,
+  id,
+}) => {
+  return (
+    <WithContextMenu
+      view={<StatementContextMenu tree={tree} place={{ after: id }} embed />}
+    >
+      <ArrayRemoveHandler key={id} tree={tree} id={id}>
+        <StatementEditor tree={tree} id={id} />
+      </ArrayRemoveHandler>
+    </WithContextMenu>
+  );
+};
+
 const StatementEditorList: FC<{ tree: Tree<Statement[]> }> = ({ tree }) => {
   const stmtkeys = useTreeArrayKeys(tree);
   const updater = useTreeArrayUpdater(tree);
   return (
     <VStack space={1} alignSelf="stretch">
-      {stmtkeys.map((key, idx) => (
-        <ArrayRemoveHandler key={key} tree={tree} id={key}>
-          <StatementEditor tree={tree} id={key} />
-        </ArrayRemoveHandler>
+      {stmtkeys.map((key) => (
+        <StatementWrapper key={key} tree={tree} id={key} />
       ))}
-      <Button.Group isAttached>
-        <IconButton
-          size={6}
-          variant="solid"
-          icon={<Icon as={MaterialCommunityIcons} name="card-text" />}
-          onPress={() => {
-            updater.insert({
-              type: "text",
-              text: { template: "", params: [] },
-              modifiers: [],
-            });
-          }}
-        />
-        <IconButton
-          size={6}
-          variant="outline"
-          icon={<Icon as={MaterialCommunityIcons} name="arrow-decision" />}
-          onPress={() => {
-            updater.insert({
-              type: "choices",
-              choices: [],
-            });
-          }}
-        />
-        <IconButton size={6} variant="outline" icon={<ThreeDotsIcon />} />
-      </Button.Group>
+      <StatementContextMenu tree={tree} />
     </VStack>
   );
 };

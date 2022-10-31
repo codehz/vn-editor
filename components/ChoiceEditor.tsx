@@ -12,7 +12,7 @@ import React, { FC } from "react";
 import { Choice } from "../lib/types";
 import { TreeProxy } from "./TreeProxy";
 import { ArrayRemoveHandler, useRemoveHandler } from "./ArrayHelper";
-import StatementEditor from "./StatementEditor";
+import StatementEditor, { StatementContextMenu } from "./StatementEditor";
 import { TemplateEditor } from "./TemplateEditor";
 import {
   Tree,
@@ -20,13 +20,18 @@ import {
   useTreeArrayKeys,
   useTreeArrayUpdater,
 } from "../hooks/tree-state";
+import { WithContextMenu } from "./ContextMenu";
 
 const ChoiceEditor: FC<{ tree: Tree<Choice> }> = ({ tree }) => {
   const text = useSubTree(tree, "text");
   const body = useSubTree(tree, "body");
   return (
     <VStack borderWidth={1} borderColor="gray.200" borderRadius={5}>
-      <TemplateEditor tree={text} embed />
+      <WithContextMenu
+        view={<StatementContextMenu tree={body} place={{ head: true }} embed />}
+      >
+        <TemplateEditor tree={text} embed />
+      </WithContextMenu>
       <Box padding={1}>
         <StatementEditor.List tree={body} />
       </Box>

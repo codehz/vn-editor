@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import {
   Input,
   Text,
@@ -5,12 +6,15 @@ import {
   VStack,
   AddIcon,
   Box,
-  CheckIcon,
-  DeleteIcon,
   IconButton,
+  HStack,
+  Icon,
 } from "native-base";
 import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
-import { InputAccessoryView, TouchableOpacity } from "react-native";
+import {
+  InputAccessoryView,
+  TouchableOpacity,
+} from "react-native";
 import {
   Tree,
   useSubTree,
@@ -22,6 +26,7 @@ import {
 import { tokenizeTemplate } from "../lib/tokenizer";
 import { Expression, TemplatedText } from "../lib/types";
 import { compareByJson, randomid } from "../lib/utils";
+import { useContextMenu } from "./ContextMenu";
 import { useRemoveHandler } from "./ArrayHelper";
 import { useEditMode } from "./EditMode";
 import ExpressionEditor from "./ExpressionEditor";
@@ -177,6 +182,7 @@ const EditorCore: FC<{
 }> = ({ tree, onExit, embed }) => {
   const template = useSubTree(tree, "template");
   const params = useSubTree(tree, "params");
+  useTreeValue(tree, "key")
   const [variables] = useTreeSnapshot(
     template,
     getVariablesFromTemplate,
@@ -184,18 +190,25 @@ const EditorCore: FC<{
   );
   const remove = useRemoveHandler();
   const [id] = useState(() => randomid());
+  const buttons = useContextMenu();
   return (
     <>
       <InputAccessoryView nativeID={id} backgroundColor="white">
-        <Button.Group isAttached bgColor="white" justifyContent="flex-end">
-          <IconButton
-            colorScheme="danger"
-            variant="ghost"
-            icon={<DeleteIcon />}
-            onPress={remove}
-          />
-          <IconButton variant="ghost" icon={<CheckIcon />} onPress={onExit} />
-        </Button.Group>
+        <HStack bgColor="coolGray.300" justifyContent="space-between">
+          {buttons}
+          <HStack>
+            <IconButton
+              icon={<Icon as={MaterialCommunityIcons} name="delete" />}
+              colorScheme="danger"
+              onPress={remove}
+            />
+            <IconButton
+              colorScheme="black"
+              icon={<Icon as={MaterialIcons} name="done" />}
+              onPress={onExit}
+            />
+          </HStack>
+        </HStack>
       </InputAccessoryView>
       <VStack w="100%" space={1} padding={embed ? 1 : 0}>
         <EditTemplate tree={template} inputAccessoryViewID={id} />

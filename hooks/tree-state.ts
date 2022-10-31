@@ -189,14 +189,16 @@ export function useTreeUpdater<T, S extends string[]>(
   );
 }
 
+export type InsertPlace =
+  | { before: string }
+  | { after: string }
+  | { head: true }
+  | undefined;
+
 export type ArrayUpdater<T> = {
   insert(
     value: DistributiveOmit<T, "key"> & { key?: string },
-    before?: string
-  ): void;
-  insertAfter(
-    value: DistributiveOmit<T, "key"> & { key?: string },
-    before?: string
+    place?: InsertPlace
   ): void;
   remove(key: string): T | undefined;
   update(value: string[] | ((input: T[]) => string[] | undefined)): void;
@@ -221,27 +223,28 @@ export function useTreeArrayUpdater<T, S extends string[]>(
 ): ArrayUpdater<ResolvedType<T, S>[number]> {
   return useMemo(
     () => ({
-      insert(value: any, before?: string): void {
+      insert(value: any, place?: InsertPlace): void {
         root.updateByPath(
           path,
           (arr: any) => {
-            const idx = before
-              ? arr.findIndex((x: any) => x.key === before)
-              : -1;
-            if (idx < 0) arr.push({ key: rid(), ...value });
-            else arr.splice(idx, 0, { key: rid(), ...value });
-            return arr;
-          },
-          true
-        );
-      },
-      insertAfter(value: any, after?: string): void {
-        root.updateByPath(
-          path,
-          (arr: any) => {
-            const idx = after ? arr.findIndex((x: any) => x.key === after) : -1;
-            if (idx < 0) arr.unshift({ key: rid(), ...value });
-            else arr.splice(idx + 1, 0, { key: rid(), ...value });
+            const newitem = { key: rid(), ...value };
+            if (place) {
+              if ("before" in place) {
+                const idx = arr.findIndex((x: any) => x.key === place.before);
+                if (idx < 0) arr.push(newitem);
+                else arr.splice(idx, 0, newitem);
+              } else if ("after" in place) {
+                const idx = arr.findIndex((x: any) => x.key === place.after);
+                if (idx < 0) arr.unshift(newitem);
+                else arr.splice(idx + 1, 0, newitem);
+              } else if ("head" in place) {
+                arr.unshift(newitem);
+              } else {
+                throw new Error("invalid place: " + JSON.stringify(place));
+              }
+            } else {
+              arr.push(newitem);
+            }
             return arr;
           },
           true
