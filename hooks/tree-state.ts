@@ -111,35 +111,43 @@ export class TreeRoot<T> implements Tree<T> {
   }
 }
 
-export class SubTree<T> implements Tree<T> {
-  parent: Tree<any>;
-  path: string[];
-  constructor(parent: Tree<any>, path: string[]) {
+export class SubTree<P, S extends string[]>
+  implements Tree<ResolvedType<P, S>>
+{
+  parent: Tree<P>;
+  path: S;
+  constructor(parent: Tree<P>, path: S) {
     this.parent = parent;
     this.path = path;
   }
-  get value() {
+  get value(): ResolvedType<P, S> {
     return this.parent.getByPath(this.path);
   }
-  set value(value) {
+  set value(value: ResolvedType<P, S>) {
     this.parent.updateByPath(this.path, () => value);
   }
   on(keys: string[], callback: () => void) {
     return this.parent.on([...this.path, ...keys], callback);
   }
-  update<S extends string[]>(keys: S, only = false): void {
+  update<Q extends string[]>(keys: Q, only = false): void {
     this.parent.update([...this.path, ...keys], only);
   }
-  updateByPath<S extends string[]>(
-    keys: S,
+  updateByPath<Q extends string[]>(
+    keys: Q,
     value:
-      | ResolvedType<T, S>
-      | ((old: ResolvedType<T, S>) => ResolvedType<T, S>),
+      | ResolvedType<ResolvedType<P, S>, Q>
+      | ((
+          old: ResolvedType<ResolvedType<P, S>, Q>
+        ) => ResolvedType<ResolvedType<P, S>, Q>),
     only = false
   ): void {
-    this.parent.updateByPath([...this.path, ...keys] as any, value, only);
+    this.parent.updateByPath(
+      [...this.path, ...keys] as any,
+      value as any,
+      only
+    );
   }
-  getByPath<S extends string[]>(keys: S): ResolvedType<T, S> {
+  getByPath<Q extends string[]>(keys: Q): ResolvedType<ResolvedType<P, S>, Q> {
     return this.parent.getByPath([...this.path, ...keys]);
   }
 }
@@ -147,7 +155,7 @@ export class SubTree<T> implements Tree<T> {
 export function useSubTree<T, S extends string[]>(
   root: Tree<T>,
   ...path: S
-): Tree<ResolvedType<T, S>> {
+): SubTree<T, S> {
   return useMemo(() => new SubTree(root, path), [root, path]);
 }
 

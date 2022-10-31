@@ -16,7 +16,14 @@ import {
 import React, { FC, ReactNode, useCallback, useMemo, useState } from "react";
 import { useActionSheet } from "@expo/react-native-action-sheet";
 import { Keyboard, View } from "react-native";
-import { Tree, useTreeUpdater, useTreeValue } from "../hooks/tree-state";
+import {
+  SubTree,
+  Tree,
+  useTreeArrayKeys,
+  useTreeSnapshot,
+  useTreeUpdater,
+  useTreeValue,
+} from "../hooks/tree-state";
 import { Expression, Variable } from "../lib/types";
 import { TreeProxy } from "./TreeProxy";
 import { useVariableContext, VariableSection } from "./VariableContext";
@@ -31,11 +38,18 @@ const typenames: Record<Expression["type"], string> = {
 };
 
 const FoundedVariable: FC<{
-  tree: Tree<Variable>;
+  tree: SubTree<Variable[], [string]>;
   scope: string;
   prefix?: string;
-}> = ({ tree, scope, prefix }) => {
+  id: string;
+  fallback: ReactNode;
+}> = ({ tree, scope, prefix, id, fallback }) => {
+  const valid = useTreeSnapshot(
+    tree.parent,
+    useCallback((list: Variable[]) => list.some((x) => x.key === id), [id])
+  );
   const value = useTreeValue(tree, "name");
+  if (!valid) return <>{fallback}</>;
   return (
     <>
       {prefix}
@@ -52,7 +66,15 @@ const VariableNameResolver: FC<{
   const { find } = useVariableContext();
   const found = useMemo(() => (id ? find(id) : undefined), [id]);
   if (found) {
-    return <FoundedVariable tree={found[1]} scope={found[0]} prefix={prefix} />;
+    return (
+      <FoundedVariable
+        tree={found[1]}
+        scope={found[0]}
+        prefix={prefix}
+        id={id}
+        fallback={fallback}
+      />
+    );
   }
   return <>{fallback}</>;
 };
@@ -120,29 +142,55 @@ const PlainTextEditor: FC<{ tree: Tree<string>; label: string }> = ({
   );
 };
 
+const VariableNameButton: FC<{
+  tree: Tree<Variable[]>;
+  onSelect(key: string): void;
+  id: string;
+}> = ({ tree, onSelect, id }) => {
+  const name = useTreeValue(tree, id, "name");
+  return (
+    <Pressable
+      _pressed={{ bgColor: "primary.400" }}
+      paddingX={0.5}
+      margin={0.5}
+      bgColor="primary.200"
+      borderRadius={5}
+      onPress={() => onSelect(id)}
+    >
+      <Text>{name}</Text>
+    </Pressable>
+  );
+};
+
 const VariableList: FC<{
+  tree: Tree<Variable[]>;
+  onSelect(key: string): void;
+}> = ({ tree, onSelect }) => {
+  const keys = useTreeArrayKeys(tree);
+  return (
+    <Flex flexWrap="wrap" direction="row">
+      {keys.map((key) => (
+        <VariableNameButton
+          key={key}
+          tree={tree}
+          id={key}
+          onSelect={onSelect}
+        />
+      ))}
+    </Flex>
+  );
+};
+
+const VariableSectionList: FC<{
   list: VariableSection[];
   onSelect(key: string): void;
 }> = ({ list, onSelect }) => {
   return (
     <VStack space={1}>
-      {list.map(({ title, data }) => (
+      {list.map(({ title, tree }) => (
         <>
           <Text fontSize={20}>{title}</Text>
-          <Flex flexWrap="wrap" direction="row">
-            {data.map(({ key, name }) => (
-              <Pressable
-                _pressed={{ bgColor: "primary.400" }}
-                paddingX={0.5}
-                margin={0.5}
-                bgColor="primary.200"
-                borderRadius={5}
-                onPress={() => onSelect(key)}
-              >
-                <Text>{name}</Text>
-              </Pressable>
-            ))}
-          </Flex>
+          <VariableList tree={tree} onSelect={onSelect} />
         </>
       ))}
     </VStack>
@@ -155,6 +203,10 @@ const VariableSelector: FC<{ tree: Tree<string> }> = ({ tree }) => {
   const [state, setState] = useState<VariableSection[] | undefined>();
   const [open, setOpen] = useState(false);
   const { list } = useVariableContext();
+  const onSelect = useCallback((value: string) => {
+    setValue(value);
+    setOpen(false);
+  }, []);
   return (
     <>
       <Button
@@ -163,7 +215,7 @@ const VariableSelector: FC<{ tree: Tree<string> }> = ({ tree }) => {
         variant="subtle"
         onPress={() => {
           Keyboard.dismiss();
-          setState(list());
+          setState(list);
           setOpen(true);
         }}
       >
@@ -178,13 +230,7 @@ const VariableSelector: FC<{ tree: Tree<string> }> = ({ tree }) => {
       >
         <Actionsheet.Content>
           <ScrollView w="100%" overScrollMode="never" bounces={false}>
-            <VariableList
-              list={state ?? []}
-              onSelect={(value: string) => {
-                setValue(value);
-                setOpen(false);
-              }}
-            />
+            <VariableSectionList list={state ?? []} onSelect={onSelect} />
           </ScrollView>
         </Actionsheet.Content>
       </Actionsheet>

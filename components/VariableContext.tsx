@@ -1,5 +1,5 @@
 import { createContext, FC, ReactNode, useContext, useMemo } from "react";
-import { Tree } from "../hooks/tree-state";
+import { SubTree, Tree } from "../hooks/tree-state";
 import { Variable } from "../lib/types";
 
 export type VariableDescriptor = {
@@ -10,14 +10,12 @@ export type VariableDescriptor = {
 
 export type VariableSection = {
   title: string;
-  data: VariableDescriptor[];
+  tree: Tree<Variable[]>;
 };
 
 const VariableContext = createContext({
-  list(): VariableSection[] {
-    return [];
-  },
-  find(key: string): [string, Tree<Variable>] | undefined {
+  list: [] as VariableSection[],
+  find(key: string): [string, SubTree<Variable[], [string]>] | undefined {
     return undefined;
   },
 });
@@ -26,30 +24,26 @@ export const useVariableContext = () => useContext(VariableContext);
 
 export const WithVariableContext: FC<{
   name: string;
-  list(): VariableDescriptor[];
+  tree: Tree<Variable[]>;
   children: ReactNode;
-}> = ({ name, list, children }) => {
+}> = ({ name, tree, children }) => {
   const parent = useVariableContext();
   const value = useMemo(
     () => ({
-      list(): VariableSection[] {
-        return [
-          ...parent.list(),
-          {
-            title: name,
-            data: list(),
-          },
-        ];
-      },
-      find(key: string): [string, Tree<Variable>] | undefined {
-        const found = list()
-          .find((x) => x.key === key)
-          ?.get();
-        if (found) return [name, found];
+      list: [
+        ...parent.list,
+        {
+          title: name,
+          tree,
+        },
+      ],
+      find(key: string): [string, SubTree<Variable[], [string]>] | undefined {
+        const found = new SubTree<Variable[], [string]>(tree, [key]);
+        if (found.value) return [name, found];
         return parent.find(key);
       },
     }),
-    [parent, name, list]
+    [parent, name, tree]
   );
   return (
     <VariableContext.Provider value={value}>

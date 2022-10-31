@@ -23,17 +23,6 @@ export const Editor: FC = () => {
   const update = useTreeUpdater(root);
   const variables = useSubTree(root, "variables");
   const entrypoint = useSubTree(root, "entrypoint");
-  const listVariables = useCallback(
-    () =>
-      root.value.variables.map((x) => ({
-        key: x.key,
-        name: x.name,
-        get() {
-          return new SubTree<Variable>(variables, [x.key]);
-        },
-      })),
-    []
-  );
   return (
     <Box safeArea>
       <ScrollView
@@ -54,7 +43,7 @@ export const Editor: FC = () => {
           >
             reset
           </Button>
-          <WithVariableContext name="Global" list={listVariables}>
+          <WithVariableContext name="Global" tree={variables}>
             <VariableEditor.List tree={variables} />
             <StatementEditor.List tree={entrypoint} />
           </WithVariableContext>
