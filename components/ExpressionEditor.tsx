@@ -16,17 +16,10 @@ import {
 import React, { FC, ReactNode, useCallback, useMemo, useState } from "react";
 import { useActionSheet } from "@expo/react-native-action-sheet";
 import { Keyboard, View } from "react-native";
-import {
-  Tree,
-  useTreeUpdater,
-  useTreeValue,
-} from "../hooks/tree-state";
+import { Tree, useTreeUpdater, useTreeValue } from "../hooks/tree-state";
 import { Expression, Variable } from "../lib/types";
 import { TreeProxy } from "./TreeProxy";
-import {
-  useVariableContext,
-  VariableSection,
-} from "./VariableContext";
+import { useVariableContext, VariableSection } from "./VariableContext";
 
 const typenames: Record<Expression["type"], string> = {
   literal: "lit",
@@ -55,7 +48,7 @@ const VariableNameResolver: FC<{
   id: string;
   prefix?: string;
   fallback?: ReactNode;
-}> = ({ id, prefix, fallback = <Text color="error.400">not found</Text> }) => {
+}> = ({ id, prefix, fallback = <Text color="danger.400">not found</Text> }) => {
   const { find } = useVariableContext();
   const found = useMemo(() => (id ? find(id) : undefined), [id]);
   if (found) {
