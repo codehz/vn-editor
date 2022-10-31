@@ -23,8 +23,7 @@ function rid() {
 
 export interface Tree<T> {
   value: T;
-  on(keys: string[], callback: () => void): string;
-  off(token: string): void;
+  on(keys: string[], callback: () => void): () => void;
   update<S extends string[]>(keys: S, only?: boolean): void;
   updateByPath<S extends string[]>(
     keys: S,
@@ -43,14 +42,10 @@ export class TreeRoot<T> implements Tree<T> {
     this.value = input;
   }
 
-  on(keys: string[], callback: () => void): string {
+  on(keys: string[], callback: () => void) {
     const token = keys.join(".") + ".#" + rid();
     this.subscribers.set(token, callback);
-    return token;
-  }
-
-  off(token: string) {
-    return this.subscribers.delete(token);
+    return () => this.subscribers.delete(token);
   }
 
   update<S extends string[]>(keys: S, only = false) {
@@ -129,11 +124,8 @@ export class SubTree<T> implements Tree<T> {
   set value(value) {
     this.parent.updateByPath(this.path, () => value);
   }
-  on(keys: string[], callback: () => void): string {
+  on(keys: string[], callback: () => void) {
     return this.parent.on([...this.path, ...keys], callback);
-  }
-  off(token: string): void {
-    this.parent.off(token);
   }
   update<S extends string[]>(keys: S, only = false): void {
     this.parent.update([...this.path, ...keys], only);
@@ -159,16 +151,18 @@ export function useSubTree<T, S extends string[]>(
   return useMemo(() => new SubTree(root, path), [root, path]);
 }
 
+function useFlip() {
+  const [flip, setFlip] = useState(false);
+  return [flip, () => setFlip((x) => !x)] as const;
+}
+
 export function useTreeValue<T, S extends string[]>(
   root: Tree<T>,
   ...path: S
 ): ResolvedType<T, S> {
-  const [value, setValue] = useState(() => root.getByPath(path));
-  useEffect(() => {
-    const token = root.on(path, () => setValue(root.getByPath(path)));
-    return () => root.off(token);
-  }, [root, path]);
-  return value;
+  const [face, flip] = useFlip();
+  useEffect(() => root.on(path, flip), [root, path]);
+  return useMemo(() => root.getByPath(path), [root, path, face]);
 }
 
 export function useTreeUpdater<T, S extends string[]>(
@@ -204,19 +198,13 @@ export function useTreeArrayKeys<T, S extends string[]>(
   root: Tree<T>,
   ...path: S
 ): string[] {
-  const [keys, setKeys] = useState(
+  const [face, flip] = useFlip();
+  useEffect(() => root.on(path, flip), [root, path]);
+  return useMemo(
     () =>
-      (root.getByPath(path) as any)?.map((x: { key: string }) => x.key) ?? []
+      (root.getByPath(path) as any)?.map((x: { key: string }) => x.key) ?? [],
+    [root, path, face]
   );
-  useEffect(() => {
-    const token = root.on(path, () =>
-      setKeys(
-        (root.getByPath(path) as any)?.map((x: { key: string }) => x.key) ?? []
-      )
-    );
-    return () => root.off(token);
-  }, [root, path]);
-  return keys;
 }
 
 export function useTreeArrayUpdater<T, S extends string[]>(
@@ -303,9 +291,6 @@ export function useTreeSnapshot<T, R = T>(
     [ctx, pick, eq]
   );
   useEffect(() => update(), [ctx, pick]);
-  useEffect(() => {
-    const token = ctx.on([], update);
-    return () => ctx.off(token);
-  }, [ctx]);
+  useEffect(() => ctx.on([], update), [ctx]);
   return value;
 }
