@@ -7,12 +7,8 @@ import {
   Text,
   IconButton,
   Icon,
-  SectionList,
   Button,
   Actionsheet,
-  useKeyboardBottomInset,
-  Heading,
-  Badge,
   ScrollView,
   Flex,
   Pressable,
@@ -22,7 +18,6 @@ import { useActionSheet } from "@expo/react-native-action-sheet";
 import { Keyboard, View } from "react-native";
 import {
   Tree,
-  useSubTree,
   useTreeUpdater,
   useTreeValue,
 } from "../hooks/tree-state";
@@ -30,10 +25,8 @@ import { Expression, Variable } from "../lib/types";
 import { TreeProxy } from "./TreeProxy";
 import {
   useVariableContext,
-  VariableDescriptor,
   VariableSection,
 } from "./VariableContext";
-import { useEditMode } from "./EditMode";
 
 const typenames: Record<Expression["type"], string> = {
   literal: "lit",
